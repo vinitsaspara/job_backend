@@ -101,7 +101,7 @@ export const login = async (req, res) => {
         // set the cookie for 1 day
         const token = await jwt.sign(tokenData, process.env.SECRET_KEY, { expiresIn: '1d' });
         // localStorage.setItem('token', token);
-        
+
 
         user = {
             _id: user._id,
@@ -112,13 +112,18 @@ export const login = async (req, res) => {
             profile: user.profile
         }
 
-        return res.status(200).cookie("token", token,
-            { maxAge: 1 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'strict' })
+        return res.status(200).cookie("token", token, {
+            maxAge: 1 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            secure: true,          // ✅ important for HTTPS (Render)
+            sameSite: 'None'       // ✅ required for cross-site cookies
+        })
             .json({
                 message: `Welcome back ${user.fullname}`,
                 user,
                 success: true
-            })
+            });
+
 
     } catch (err) {
         console.log(err);
@@ -141,11 +146,11 @@ export const logout = async (req, res) => {
 };
 
 
- 
+
 export const updateProfile = async (req, res) => {
     try {
         const { fullname, email, phoneNumber, bio, skills } = req.body;
-        
+
         const file = req.file;
         // cloudinary ayega idhar
         const fileUri = getDataUri(file);
@@ -154,7 +159,7 @@ export const updateProfile = async (req, res) => {
 
 
         let skillsArray;
-        if(skills){
+        if (skills) {
             skillsArray = skills.split(",");
         }
         const userId = req.id; // middleware authentication
@@ -167,14 +172,14 @@ export const updateProfile = async (req, res) => {
             })
         }
         // updating data
-        if(fullname) user.fullname = fullname
-        if(email) user.email = email
-        if(phoneNumber)  user.phoneNumber = phoneNumber
-        if(bio) user.profile.bio = bio
-        if(skills) user.profile.skills = skillsArray
-      
+        if (fullname) user.fullname = fullname
+        if (email) user.email = email
+        if (phoneNumber) user.phoneNumber = phoneNumber
+        if (bio) user.profile.bio = bio
+        if (skills) user.profile.skills = skillsArray
+
         // resume comes later here...
-        if(cloudResponse){
+        if (cloudResponse) {
             user.profile.resume = cloudResponse.secure_url // save the cloudinary url
             user.profile.resumeOriginalName = file.originalname // Save the original file name
         }
@@ -192,9 +197,9 @@ export const updateProfile = async (req, res) => {
         }
 
         return res.status(200).json({
-            message:"Profile updated successfully.",
+            message: "Profile updated successfully.",
             user,
-            success:true
+            success: true
         })
     } catch (error) {
         console.log(error);
